@@ -117,10 +117,10 @@ _MIDIIN:    lda UPORT
 _NOTEON:    lda #ST_NOTEON      ; Specify Note On status
 MIDICMD:    ora MIDICH          ; Generic endpoint for a typical
             jsr MIDIOUT         ;   three-byte MIDI command
-            txa                 ;   with Data 1 in Y, and
+            txa                 ;   with Data 1 in X, and
             and #%01111111      ;   ,, (constrain to 0-127)
             jsr MIDIOUT         ;   ,,
-            tya                 ;   Data 2 in X
+            tya                 ;   Data 2 in Y
             and #%01111111      ;   ,, (constrain to 0-127)
             jmp MIDIOUT         ;   ,,
             
