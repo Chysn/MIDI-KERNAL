@@ -30,18 +30,39 @@
 ; SOFTWARE.
 ; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MIDI COMMAND DOCUMENTATION
+; Example
+;     jsr SETOUT                ; SETOUT and SETCH don't need to be done for
+;     ldx #CHANNEL              ;   each command invocation, only when they need
+;     jsr SETCH                 ;   to be changed
+;     ldx #XDATA                ; Range of XDATA is 0 - 127
+;     ldy #YDATA                ; Range of YDATA is 0 - 127
+;     jsr ROUTINE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;    ROUTINE    ;     DESCRIPTION       ;      XDATA        ;       YDATA      
+;---------------;-----------------------;-------------------;------------------
+; NOTEON        ; Note On               ; Note Number       ; Velocity
+; NOTEOFF       ; Note Off              ; Note Number       ; Velocity
+; POLYPRES      ; Polyphonic Pressure   ; Note Number       ; Pressure Amount
+; CONTROLC      ; Control Change        ; Controller Number ; Control Amount
+; PROGRAMC      ; Program Change        ; Program Number    ; (unused)
+; CHPRES        ; Channel Pressure      ; Pressure Amount   ; (unused)
+; PITCHB        ; Pitch Bend            ; Amount - LSB      ; Amount - MSB
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LABEL DEFINITIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; VIA Registers
 DDR         = $9112             ; Data Direction Register
-PCR         = $911c             ; Peripheral Control Register
 UPORT       = $9110             ; User Port
+PCR         = $911c             ; Peripheral Control Register
 IFLAG       = $911d             ; Interrupt flag register
 
 ; Memory Locations
 MIDICH      = $ff               ; MIDI channel
 
-; MIDI Status Messages
+; MIDI Status Message Constants
 ST_NOTEON   = $90               ; Note On
 ST_NOTEOFF  = $80               ; Note Off
 ST_POLYPR   = $a0               ; Poly Pressure
