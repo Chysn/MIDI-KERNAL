@@ -35,8 +35,8 @@
 ;     jsr SETOUT                ; SETOUT and SETCH don't need to be done for
 ;     ldx #CHANNEL              ;   each command invocation, only when they need
 ;     jsr SETCH                 ;   to be changed
-;     ldx #DATA1                ; Range of DATA1 range is 0 - 127
-;     ldy #DATA2                ; Range of DATA2 range is 0 - 127
+;     ldx #DATA1                ; Range of DATA1 is 0 - 127
+;     ldy #DATA2                ; Range of DATA2 is 0 - 127
 ;     jsr ROUTINE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;    ROUTINE    ;     DESCRIPTION       ;     DATA1 (x)     ;     DATA2  (y)     
