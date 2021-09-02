@@ -35,12 +35,12 @@
 ;     jsr SETOUT                ; SETOUT and SETCH don't need to be done for
 ;     ldx #CHANNEL              ;   each command invocation, only when they need
 ;     jsr SETCH                 ;   to be changed
-;     ldx #XDATA                ; Range of XDATA is 0 - 127
-;     ldy #YDATA                ; Range of YDATA is 0 - 127
+;     ldx #DATA1                ; Range of DATA1 range is 0 - 127
+;     ldy #DATA2                ; Range of DATA2 range is 0 - 127
 ;     jsr ROUTINE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;    ROUTINE    ;     DESCRIPTION       ;      XDATA        ;       YDATA      
-;---------------;-----------------------;-------------------;------------------
+;    ROUTINE    ;     DESCRIPTION       ;     DATA1 (x)     ;     DATA2  (y)     
+;---------------;-----------------------;-------------------;-------------------
 ; NOTEON        ; Note On               ; Note Number       ; Velocity
 ; NOTEOFF       ; Note Off              ; Note Number       ; Velocity
 ; POLYPRES      ; Polyphonic Pressure   ; Note Number       ; Pressure Amount
