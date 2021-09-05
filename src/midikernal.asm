@@ -92,8 +92,8 @@ PITCHB:     jmp _PITCHB         ; Pitch bend
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; SETOUT
 ; Prepare port for MIDI output
-; Preparations- None
-; Registers Affected- A
+; Preparations - None
+; Registers Affected - A
 _SETOUT:    lda #%11111111      ; Set DDR for input on all lines
             sta DDR             ; ,,
             lda #%10000000      ; Set PCR for output handshaking mode
@@ -102,22 +102,22 @@ _SETOUT:    lda #%11111111      ; Set DDR for input on all lines
 
 ; SETIN
 ; Prepare port for MIDI input
-; Preparations- TBA
-; Registers Affected- TBA
+; Preparations - TBA
+; Registers Affected - TBA
 _SETIN:     rts
 
 ; SETCH
 ; Set MIDI channel
-; Preparations- A=MIDI channel ($00 - $0f)
-; Registers Affected- A
+; Preparations - A=MIDI channel ($00 - $0f)
+; Registers Affected - A
 _SETCH:     and #%00001111      ; Constrain to 0-15
             sta MIDICH
             rts
 
 ; MIDIOUT
 ; Send byte to MIDI port
-; Preparations- A=MIDI byte
-; Registers Affected- None
+; Preparations - A=MIDI byte
+; Registers Affected - None
 _MIDIOUT:   sta UPORT           ; Write to port
             lda #%00010000      ; Wait for bit 4 of the interrupt flag
 -wait:      bit IFLAG           ;   to be set, indicating acknowledgement
@@ -126,15 +126,15 @@ _MIDIOUT:   sta UPORT           ; Write to port
 
 ; MIDIIN
 ; Receive byte from MIDI port
-; Preparations- None
-; Registers Affected- A
+; Preparations - None
+; Registers Affected - A
 _MIDIIN:    lda UPORT
             rts
 
 ; NOTEON
 ; Send Note On command
-; Preparations- Set X with note number and Y with velocity
-; Registers Affected- A
+; Preparations - Set X with note number and Y with velocity
+; Registers Affected - A
 _NOTEON:    lda #ST_NOTEON      ; Specify Note On status
 MIDICMD:    ora MIDICH          ; Generic endpoint for a typical
             jsr MIDIOUT         ;   three-byte MIDI command
@@ -147,29 +147,29 @@ MIDICMD:    ora MIDICH          ; Generic endpoint for a typical
             
 ; NOTEOFF
 ; Send Note Off command
-; Preparations- Set X with note number and Y with velocity
-; Registers Affected- A   
+; Preparations - Set X with note number and Y with velocity
+; Registers Affected - A   
 _NOTEOFF:   lda #ST_NOTEOFF
             jmp MIDICMD
 
 ; POLYPRES
 ; Send Polyphonic Pressure command
-; Preparations- Set X with note number and Y with pressure
-; Registers Affected- A            
+; Preparations - Set X with note number and Y with pressure
+; Registers Affected - A            
 _POLYPRES:  lda #ST_POLYPR
             jmp MIDICMD
             
 ; CONTROLC
 ; Send Continuous Control command
-; Preparations- Set X with controller number and Y with amount
-; Registers Affected- A
+; Preparations - Set X with controller number and Y with amount
+; Registers Affected - A
 _CONTROLC:  lda #ST_CONTROLC
             jmp MIDICMD
             
 ; PROGRAMC
 ; Send Program Change command
-; Preparations- Set X with new program number
-; Registers Affected- A
+; Preparations - Set X with new program number
+; Registers Affected - A
 _PROGRAMC:  lda #ST_PROGRAMC
 MIDICMD2:   ora MIDICH          ; Generic endpoint for a two-byte
             jsr MIDIOUT         ;   MIDI command
@@ -179,14 +179,14 @@ MIDICMD2:   ora MIDICH          ; Generic endpoint for a two-byte
             
 ; CHPRES
 ; Send Channel Pressure command
-; Preparations- Set X with pressure amount
-; Registers Affected- A
+; Preparations - Set X with pressure amount
+; Registers Affected - A
 _CHPRES:    lda #ST_CHPR
             jmp MIDICMD2 
             
 ; PITCHB
 ; Send Pitch Bend command
-; Preparations- Set X with LSB (0-127) and Y with MSB (0-127)
-; Registers Affected- A
+; Preparations - Set X with LSB (0-127) and Y with MSB (0-127)
+; Registers Affected - A
 _PITCHB:    lda #ST_PITCHB
             jmp MIDICMD
