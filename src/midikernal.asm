@@ -33,7 +33,7 @@
 ; MIDI COMMAND DOCUMENTATION
 ; Example
 ;     jsr SETOUT                ; SETOUT and SETCH don't need to be done for
-;     ldx #CHANNEL              ;   each command invocation, only when they need
+;     lda #CHANNEL              ;   each command invocation, only when they need
 ;     jsr SETCH                 ;   to be changed
 ;     ldx #DATA1                ; Range of DATA1 is 0 - 127
 ;     ldy #DATA2                ; Range of DATA2 is 0 - 127
@@ -60,7 +60,7 @@ PCR         = $911c             ; Peripheral Control Register
 IFLAG       = $911d             ; Interrupt flag register
 
 ; Memory Locations
-MIDICH      = $ff               ; MIDI channel
+MIDICH      = $fe               ; MIDI channel
 
 ; MIDI Status Message Constants
 ST_NOTEON   = $90               ; Note On
