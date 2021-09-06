@@ -57,7 +57,7 @@
 DDR         = $9112             ; Data Direction Register
 UPORT       = $9110             ; User Port
 PCR         = $911c             ; Peripheral Control Register
-IFLAG       = $911d             ; Interrupt flag register
+IFR         = $911d             ; Interrupt flag register
 
 ; Memory Locations
 MIDICH      = $fe               ; MIDI channel
@@ -77,6 +77,7 @@ ST_PITCHB   = $e0               ; Pitch Bend
 SETOUT:     jmp _SETOUT         ; Set MIDI port to output mode
 SETIN:      jmp _SETIN          ; Set MIDI port to input mode
 SETCH:      jmp _SETCH          ; Set MIDI channel
+MIDIINT:    jmp _MIDIINT        ; Check MIDI in interrupt
 MIDIOUT:    jmp _MIDIOUT        ; Send next MIDI byte to stream
 MIDIIN:     jmp _MIDIIN         ; Get next MIDI byte in stream
 NOTEON:     jmp _NOTEON         ; Note on
@@ -104,7 +105,9 @@ _SETOUT:    lda #%11111111      ; Set DDR for input on all lines
 ; Prepare port for MIDI input
 ; Preparations - TBA
 ; Registers Affected - TBA
-_SETIN:     rts
+_SETIN:     lda #%00000000      ; Set DDR for output on all lines
+            sta DDR             ; ,,
+            sta PCR             ; Set PCR for interrupt input mode
 
 ; SETCH
 ; Set MIDI channel
@@ -113,14 +116,23 @@ _SETIN:     rts
 _SETCH:     and #%00001111      ; Constrain to 0-15
             sta MIDICH
             rts
-
+            
+; MIDIINT
+; Check for MIDI In Interrupt
+; If Z is clear, a new byte is at the input. See MIDIIN.
+; Preparations - None
+; Registers Affected - A
+_MIDIINT:   lda #%00001000      ; Check bit 3 of IFR, which indicates
+            bit IFR             ;   that the interface has written to the port
+            rts
+            
 ; MIDIOUT
 ; Send byte to MIDI port
 ; Preparations - A=MIDI byte
 ; Registers Affected - None
 _MIDIOUT:   sta UPORT           ; Write to port
             lda #%00010000      ; Wait for bit 4 of the interrupt flag
--wait:      bit IFLAG           ;   to be set, indicating acknowledgement
+-wait:      bit IFR             ;   to be set, indicating acknowledgement
             beq wait            ;   of MIDI message by the interface
             rts
 
@@ -130,7 +142,7 @@ _MIDIOUT:   sta UPORT           ; Write to port
 ; Registers Affected - A
 _MIDIIN:    lda UPORT
             rts
-
+            
 ; NOTEON
 ; Send Note On command
 ; Preparations - Set X with note number and Y with velocity
