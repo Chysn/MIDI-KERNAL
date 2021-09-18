@@ -47,7 +47,6 @@
 ; Example
 ;     lda #ST_CLOCK
 ;     jsr MIDIOUT
-;     lda #ST_
 ;
 ;    ROUTINE    ;     DESCRIPTION       ;     DATA1 (X)     ;     DATA2  (Y)     
 ;---------------;-----------------------;-------------------;-------------------
