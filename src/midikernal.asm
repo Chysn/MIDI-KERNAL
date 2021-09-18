@@ -5,7 +5,7 @@
 ;                             (c)2021, Jason Justian
 ;                  
 ; Release 1 - September 2, 2021
-; Release 2 - September 10, 2021
+; Release 2 - September 17, 2021
 ; Assembled with XA
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
