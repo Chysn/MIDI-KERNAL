@@ -23,7 +23,7 @@ start:      lda KEYDOWN         ; Wait for a key press
             cmp #39             ; If F1 is pressed, alternate between
             bne keyboard        ;   channel 1 and channel 16 (MIDI/CV)
             lda #$0f            ;   ,,
-            eor MIDICH          ;   ,,
+            eor MIDIST          ;   ,,
             sta $900f           ;   ,, Screen color indicator
             jsr SETCH           ;   ,,
             jmp end             ;   ,, 
