@@ -20,6 +20,7 @@ Install:    lda #<ISR           ; Set the location of the NMI interrupt service
             lda #>ISR           ;   messages. Note the lack of SEI/CLI here.
             sta $0319           ;   They would do no good for the NMI.
             jsr SETIN           ; Prepare hardware for MIDI input
+            ; Fall through to Main
  
 ; Main Loop
 ; Waits for a complete MIDI message, and then dispatches the message to

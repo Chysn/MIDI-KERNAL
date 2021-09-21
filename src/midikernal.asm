@@ -99,7 +99,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; LABEL DEFINITIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; VIA Registers
+; VIA Registers (VIA#1, Port B)
 DDR         = $9112             ; Data Direction Register
 UPORT       = $9110             ; User Port
 PCR         = $911c             ; Peripheral Control Register
@@ -108,8 +108,8 @@ IER         = $911e             ; Interrupt enable register
 
 ; Memory Locations
 MIDIST      = $9e               ; Bits 0-3 = Channel, bits 4-7 = Last Status
-DATA2       = $9b               ; MIDI data bytes (they're in reverse order
-DATA1       = $9c               ;   because DATACOUNT descends)
+DATA1       = $9c               ; MIDI data bytes
+DATA2       = $9b               ; ,,
 DATACOUNT   = $9f               ; Data byte countdown, 0 = message waiting
 
 ; Status Message Constants
@@ -138,25 +138,28 @@ ST_RESET    = $ff               ; System Reset              (0 data)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; MIDI KERNAL JUMP TABLE                                                  Offset
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MIDI Out
 SETOUT:     jmp _SETOUT         ; Set MIDI port to output mode              0000
-SETIN:      jmp _SETIN          ; Set MIDI port to input mode               0003
-SETCH:      jmp _SETCH          ; Set MIDI channel (out)                    0006
-GETCH:      jmp _GETCH          ; Get MIDI channel for message (in)         0009
-SETST:      jmp _SETST          ; Set MIDI status and channel (in)          000c
-GETST:      jmp _GETST          ; Get MIDI status (in)                      000f
-CHKMIDI:    jmp _CHKMIDI        ; Check MIDI in interrupt (in)              0012
-MIDIOUT:    jmp _MIDIOUT        ; Send next MIDI byte to stream (out)       0015
-MIDIIN:     jmp _MIDIIN         ; Get next MIDI byte in stream (in)         0018
-NOTEON:     jmp _NOTEON         ; Note on (out)                             001b
-NOTEOFF:    jmp _NOTEOFF        ; Note off (out)                            001e
-POLYPRES:   jmp _POLYPRES       ; Poly pressure (out)                       0021
-CONTROLC:   jmp _CONTROLC       ; Control change (out)                      0024
-PROGRAMC:   jmp _PROGRAMC       ; Program change (out)                      0027
-CHPRES:     jmp _CHPRES         ; Channel pressure (out)                    002a
-PITCHB:     jmp _PITCHB         ; Pitch bend (out)                          002d
-MAKEMSG:    jmp _MAKEMSG        ; Add incoming byte to MIDI message (in)    0030
-MSGSIZE:    jmp _MSGSIZE        ; Get size of MIDI message (in)             0033
-GETMSG:     jmp _GETMSG         ; Get complete MIDI message (in)            0036
+SETCH:      jmp _SETCH          ; Set MIDI channel                          0003
+MIDIOUT:    jmp _MIDIOUT        ; Send next MIDI byte to stream             0006
+NOTEON:     jmp _NOTEON         ; Note on                                   0009
+NOTEOFF:    jmp _NOTEOFF        ; Note off                                  000c
+POLYPRES:   jmp _POLYPRES       ; Poly pressure                             000f
+CONTROLC:   jmp _CONTROLC       ; Control change                            0012
+PROGRAMC:   jmp _PROGRAMC       ; Program change                            0015
+CHPRES:     jmp _CHPRES         ; Channel pressure                          0018
+PITCHB:     jmp _PITCHB         ; Pitch bend                                001b
+
+; MIDI In
+SETIN:      jmp _SETIN          ; Set MIDI port to input mode               001e
+GETCH:      jmp _GETCH          ; Get MIDI channel for message              0021
+SETST:      jmp _SETST          ; Set MIDI status and channel               0024
+GETST:      jmp _GETST          ; Get MIDI status                           0027
+CHKMIDI:    jmp _CHKMIDI        ; Check MIDI in interrupt                   002a
+MIDIIN:     jmp _MIDIIN         ; Get next MIDI byte in stream              002d
+MAKEMSG:    jmp _MAKEMSG        ; Add incoming byte to MIDI message         0030
+MSGSIZE:    jmp _MSGSIZE        ; Get size of MIDI message                  0033
+GETMSG:     jmp _GETMSG         ; Get complete MIDI message                 0036
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; MIDI ROUTINE IMPLEMENTATIONS
@@ -335,9 +338,8 @@ running_st: pha                 ; Running status; re-use the last status
             jsr set_count       ;   byte, reset the byte count, and then add
             pla                 ;   the data to message storage
 set_data:   dec DATACOUNT       ; Which data byte is this?
-            ldx DATACOUNT       ; ,,
-            cpx #2              ; ,, If a data byte follows a zero-byte status,
-            bcs msg_error       ; ,, ignore it
+            ldx DATACOUNT       ; If a data byte follows a zero-byte status,
+            bmi msg_error       ; ,, ignore it
             sta DATA2,x         ; Write the byte to message storage
 msg_error:  rts                 ; ,,
 new_status: jsr SETST           ; Set status byte
@@ -346,7 +348,7 @@ set_count:  jsr MSGSIZE         ; Get message size
             rts
             
 ; MSGSIZE
-; Get data size of MIDI message, in data bytes
+; Get data size of MIDI message, in data bytes (0, 1, or 2)
 ; Registers Affected - A, X     
 ; Return Values - Number of data bytes in A
 _MSGSIZE:   ldx #12             ; X is the index of the last status message
@@ -370,10 +372,16 @@ f_st:       lda SizeTableD,x    ; Set number of data at index.
 _GETMSG:    clc                 ; Default to carry clear (no message)
             lda DATACOUNT       ; Is a complete message waiting?
             bne no_msg          ; If DATACOUNT != 0, message is incomplete
-            ldx DATA1           ; Populate data bytes
-            ldy DATA2           ; ,,
             jsr GETST           ; Get status (without channel) for return
-            dec DATACOUNT       ; Set message to unready, to avoid duplicate
+            pha                 ; Store status during size calculation
+            jsr MSGSIZE         ; If this message has one data byte, that
+            ldx DATA2           ;   byte is in DATA2, so set X appropriately
+            cmp #1              ; Otherwise, set X with DATA1 and Y with
+            beq set_rst         ;   DATA2
+            ldx DATA1           ;   ,,
+            ldy DATA2           ;   ,,
+set_rst:    pla                 ; Put status back in A            
+            dec DATACOUNT       ; Set message to unready ($ff)
             sec                 ; Set carry to indicate message is ready
 no_msg:     rts
 
