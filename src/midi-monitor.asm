@@ -1,4 +1,6 @@
 ; MIDI Monitor
+; MIDI Monitor is a wAx plug-in that shows complete MIDI messages
+; using between 1 and 3 bytes of hex.
 
 ; Memory
 STATUS      = $0247
