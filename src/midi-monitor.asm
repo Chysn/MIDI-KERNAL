@@ -11,20 +11,20 @@ SIZE        = $024a
 ; wAx API
 EFADDR      = $a6               ; Effective Address
 X_PC        = $03               ; External Persistent Counter
-Buff2Byte   = $7000             ; Get 8-bit hex number from input buffer to A
-CharGet     = $7003             ; Get character from input buffer to A
-CharOut     = $7006             ; Write character in A to output buffer
-Hex         = $7009             ; Write value in A to output buffer 8-bit hex
-IncAddr     = $700c             ; Increment Effective Address, store value in A
-IncPC       = $700f             ; Increment Persistent Counter
-Lookup      = $7012             ; Lookup 6502 instruction with operand in A
-PrintBuff   = $7015             ; Flush output buffer to screen
-ResetIn     = $7018             ; Reset input buffer index
-ResetOut    = $701b             ; Reset output buffer index
-ShowAddr    = $701e             ; Write Effective Address to output buffer
-ShowPC      = $7021             ; Write Persistent Counter to output buffer
-EAtoPC      = $7024             ; Copy Effective Address to Persistent Counter
-PrintStr    = $7027             ; Print String at A/Y
+Buff2Byte   = $a003             ; Get 8-bit hex number from input buffer to A
+CharGet     = $a006             ; Get character from input buffer to A
+CharOut     = $a009             ; Write character in A to output buffer
+Hex         = $a00c             ; Write value in A to output buffer 8-bit hex
+IncAddr     = $a00f             ; Increment Effective Address, store value in A
+IncPC       = $a012             ; Increment Persistent Counter
+Lookup      = $a015             ; Lookup 6502 instruction with operand in A
+PrintBuff   = $a018             ; Flush output buffer to screen
+ResetIn     = $a01b             ; Reset input buffer index
+ResetOut    = $a01e             ; Reset output buffer index
+ShowAddr    = $a021             ; Write Effective Address to output buffer
+ShowPC      = $a024             ; Write Persistent Counter to output buffer
+EAtoPC      = $a027             ; Copy Effective Address to Persistent Counter
+PrintStr    = $a02a             ; Print String at A/Y
 
 ; System Routines
 ISCNTC      = $ffe1             ; Check Stop key
