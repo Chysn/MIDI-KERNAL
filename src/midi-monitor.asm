@@ -84,9 +84,6 @@ ISR:        pha                 ; NMI does not automatically save registers like
             bne midi            ;   If so, handle MIDI input
             jmp $feb2           ; Back to normal NMI, after register saves
 midi:       jsr MAKEMSG         ; Add the byte to a MIDI message
-            lda $900f           ; Flash screen for diagnostics
-            ora #$55            ; ,,
-            sta $900f           ; ,,
             jmp $ff56           ; Restore registers and return from interrupt
 
 #include "./src/midikernal.asm"

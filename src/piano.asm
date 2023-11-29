@@ -13,7 +13,11 @@ Start:      jmp Main
 
 #include "./src/midikernal.asm"
 
-Main:       lda #0              ; Channel 1
+Main:       lda #<ISR           ; Set the location of the NMI interrupt service
+            sta $0318           ;   routine, which will capture incoming MIDI
+            lda #>ISR           ;   messages. Note the lack of SEI/CLI here.
+            sta $0319           ;   They would do no good for the NMI.
+            lda #0              ; Channel 1
             jsr SETCH           ; ,,
 start:      lda KEYDOWN         ; Wait for a key press
             cmp #$40            ; ,,
@@ -44,6 +48,19 @@ end:        lda KEYDOWN         ; Keep playing the note until the key is
             beq end             ;   ,,
             jsr NOTEOFF         ; Once the key is released, send Note Off
             jmp start           ; Back to note start
+            
+; NMI Interrupt Service Routine
+; If the interrupt is from a byte from the User Port, add it to the MIDI message
+; Otherwise, just go back to the normal NMI (to handle STOP/RESTORE, etc.)
+ISR:        pha                 ; NMI does not automatically save registers like
+            txa                 ;   IRQ does, so that needs to be done
+            pha                 ;   ,,
+            tya                 ;   ,,
+            pha                 ;   ,,
+            jsr CHKMIDI         ; Is this a MIDI-based interrupt?
+            bne midi            ;   If so, handle MIDI input
+            jmp $feb2           ; Back to normal NMI, after register saves
+midi:       jmp $ff56           ; Restore registers and return from interrupt
             
 ; Key codes for A,S,D,F,G,H,J,K            
 KeyTable:   .byte 17,41,18,42,19,43,20,44
