@@ -29,7 +29,7 @@ PrintStr    = $a02a             ; Print String at A/Y
 ; System Routines
 ISCNTC      = $ffe1             ; Check Stop key
 
-* = $1600
+* = $1800
 ; Installation routine
 Install:    lda #<ISR           ; Set the location of the NMI interrupt service
             sta $0318           ;   routine, which will capture incoming MIDI
@@ -86,4 +86,4 @@ ISR:        pha                 ; NMI does not automatically save registers like
 midi:       jsr MAKEMSG         ; Add the byte to a MIDI message
             jmp $ff56           ; Restore registers and return from interrupt
 
-#include "midikernal.asm"
+#include "./src/midikernal.asm"

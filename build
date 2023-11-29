@@ -1,0 +1,14 @@
+#!/bin/bash
+
+diskutil mount /Volumes/VIC20
+
+xa -l toc -o ./vic/sysexrec.bin ./src/sysexrec.asm
+printf "\x00\x18" | cat - ./vic/sysexrec.bin > ./vic/sysexrec
+cp ./vic/sysexrec /Volumes/VIC20/
+
+xa -o ./vic/midi-monitor.bin ./src/midi-monitor.asm
+printf "\x00\x18" | cat - ./vic/midi-monitor.bin > ./vic/midi-monitor
+cp ./vic/midi-monitor /Volumes/VIC20/
+
+diskutil unmount /Volumes/VIC20
+

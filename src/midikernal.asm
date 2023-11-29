@@ -167,20 +167,22 @@ GETMSG:     jmp _GETMSG         ; Get complete MIDI message                 0036
 ; SETOUT
 ; Prepare port for MIDI output
 ; Preparations - None
-; Registers Affected - A
-_SETOUT:    lda #%11111111      ; Set DDR for input on all lines
+; Registers Affected - None
+_SETOUT:    pha                 ; Save A for command, etc.
+            lda #%11111111      ; Set DDR for output on all lines
             sta DDR             ; ,,
             lda #%10000000      ; Set PCR for output handshaking mode
             sta PCR             ; ,,
             lda #%00001000      ; Disable CB2 interrupt
             sta IER             ; ,,
+            pla
             rts
 
 ; SETIN
 ; Prepare port for MIDI input
 ; Preparations - None
 ; Registers Affected - A
-_SETIN:     lda #%00000000      ; Set DDR for output on all lines
+_SETIN:     lda #%00000000      ; Set DDR for input on all lines
             sta DDR             ; ,,
             sta PCR             ; Set PCR for interrupt input mode
             lda #%10001000      ; Enable CB2 interrupt
@@ -234,29 +236,6 @@ _CHKMIDI:   lda #%00001000      ; Check bit 3 of IFR, which indicates
             bit IFR             ;   that the interface has written to the port
             rts
             
-; MIDIOUT
-; Send byte to MIDI port, wait for acknowledgement
-; Preparations - SETOUT, SETCH, A = MIDI byte
-; Registers Affected - A
-; Return Values - Carry flag (clear if acknowledged, set if timeout)
-_MIDIOUT:   sta UPORT           ; Write to port
-            txa                 ; Preserve X during acknowledgement
-            pha                 ;   timeout check
-            ldx #0              ; X = Timeout counter
-            lda #%00010000      ; Wait for bit 4 of the interrupt flag
--wait:      dex                 ; Check for interface timeout
-            beq timeout         ; ,,
-            bit IFR             ; Check interrupt flag for acknowledgement
-            beq wait            ;   of MIDI message by the interface
-            pla                 ; Get X back
-            tax                 ; ,,
-            clc                 ; Clear carry if send OK
-            rts
-timeout:    pla                 ; Get X back
-            tax                 ; ,,
-            sec                 ; Set carry if timeout
-            rts
-
 ; MIDIIN
 ; Receive byte from MIDI port in A
 ; Preparations - SETIN, CHKMIDI
@@ -270,6 +249,36 @@ _MIDIIN:    lda UPORT
 ; Preparations - SETOUT, SETCH, X = note number, Y = velocity
 ; Registers Affected - A
 _NOTEON:    lda #ST_NOTEON      ; Specify Note On status
+            .byte $3c           ; Skip word
+            
+; NOTEOFF
+; Send Note Off command
+; Preparations - SETOUT, SETCH, X = note number, Y = velocity
+; Registers Affected - A   
+_NOTEOFF:   lda #ST_NOTEOFF
+            .byte $3c           ; Skip word
+
+; POLYPRES
+; Send Polyphonic Pressure command
+; Preparations - SETOUT, SETCH, X = note number, Y = pressure
+; Registers Affected - A            
+_POLYPRES:  lda #ST_POLYPR
+            .byte $3c           ; Skip word  
+            
+; PITCHB
+; Send Pitch Bend command
+; Preparations - SETOUT, SETCH, X = Bend LSB (0-127), Y = Bend MSB (0-127)
+; Registers Affected - A
+_PITCHB:    lda #ST_PITCHB
+            .byte $3c           ; Skip word
+            
+; CONTROLC
+; Send Continuous Control command
+; Preparations - SETOUT, SETCH, X = controller number, Y = amount
+; Registers Affected - A
+_CONTROLC:  lda #ST_CONTROLC
+            ; Fall through to MIDICMD
+                     
 MIDICMD:    ora MIDIST          ; Generic endpoint for a typical
             jsr MIDIOUT         ;   three-byte MIDI command
             txa                 ;   with Data 1 in X, and
@@ -277,73 +286,69 @@ MIDICMD:    ora MIDIST          ; Generic endpoint for a typical
             jsr MIDIOUT         ;   ,,
             tya                 ;   Data 2 in Y
             and #%01111111      ;   ,, (constrain to 0-127)
-            jmp MIDIOUT         ;   ,,
-
-; NOTEOFF
-; Send Note Off command
-; Preparations - SETOUT, SETCH, X = note number, Y = velocity
-; Registers Affected - A   
-_NOTEOFF:   lda #ST_NOTEOFF
-            jmp MIDICMD
-
-; POLYPRES
-; Send Polyphonic Pressure command
-; Preparations - SETOUT, SETCH, X = note number, Y = pressure
-; Registers Affected - A            
-_POLYPRES:  lda #ST_POLYPR
-            jmp MIDICMD
-
-; CONTROLC
-; Send Continuous Control command
-; Preparations - SETOUT, SETCH, X = controller number, Y = amount
+            ; Fall through to _MIDIOUT
+            
+; MIDIOUT
+; Send byte to MIDI port, wait for acknowledgement
+; Preparations - SETOUT, SETCH, A = MIDI byte
 ; Registers Affected - A
-_CONTROLC:  lda #ST_CONTROLC
-            jmp MIDICMD
+; Return Values - Carry flag (clear if acknowledged, set if timeout)
+_MIDIOUT:   jsr _SETOUT         ; Set output mode
+            sta UPORT           ; Write to port
+            txa                 ; Preserve X during acknowledgement
+            pha                 ;   timeout check
+            ldx #0              ; X = Timeout counter
+            lda #%00010000      ; Wait for bit 4 of the interrupt flag
+-wait:      dex                 ; Check for interface timeout
+            beq timeout         ; ,,
+            bit IFR             ; Check interrupt flag for acknowledgement
+            beq wait            ;   of MIDI message by the interface
+            pla                 ; Get X back
+            tax                 ; ,,
+            clc                 ; Clear carry if send OK
+out_r:      jsr _SETIN          ; Return to input mode
+            rts
+timeout:    pla                 ; Get X back
+            tax                 ; ,,
+            sec                 ; Set carry if timeout
+            bcs out_r           ; Return to input mode
 
 ; PROGRAMC
 ; Send Program Change command
 ; Preparations - SETOUT, SETCH, X = program number
 ; Registers Affected - A
 _PROGRAMC:  lda #ST_PROGRAMC
-MIDICMD2:   ora MIDIST          ; Generic endpoint for a two-byte
-            jsr MIDIOUT         ;   MIDI command
-            txa                 ;   ,,
-            and #%01111111      ;   ,, (constrain to 0-127)
-            jmp MIDIOUT         ;   ,,
+            .byte $3c           ; Skip word
 
 ; CHPRES
 ; Send Channel Pressure command
 ; Preparations - SETOUT, SETCH, X = pressure amount
 ; Registers Affected - A
 _CHPRES:    lda #ST_CHPR
-            jmp MIDICMD2 
+            ; Fall through to MIDICMD2
 
-; PITCHB
-; Send Pitch Bend command
-; Preparations - SETOUT, SETCH, X = Bend LSB (0-127), Y = Bend MSB (0-127)
-; Registers Affected - A
-_PITCHB:    lda #ST_PITCHB
-            jmp MIDICMD
+MIDICMD2:   ora MIDIST          ; Generic endpoint for a two-byte
+            jsr _MIDIOUT        ;   MIDI command
+            txa                 ;   ,,
+            and #%01111111      ;   ,, (constrain to 0-127)
+            jmp _MIDIOUT        ;   ,,
 
 ; MAKEMSG
 ; Make MIDI Message
 ; Accept bytes until the appropriate number of parameters have been added
 ; Preparations - SETIN, CHKMIDI 
 ; Registers Affected - A, X        
-_MAKEMSG:   jsr MIDIIN          ; Get the next available MIDI byte
+_MAKEMSG:   jsr _MIDIIN         ; Get the next available MIDI byte
             bmi new_status      ; If it's a new status byte, prepare for data
-            bit DATACOUNT       ; If DATACOUNT is negative, a status byte was
-            bpl set_data        ;   expected, so handle running status
-running_st: pha                 ; Running status; re-use the last status
-            jsr set_count       ;   byte, reset the byte count, and then add
-            pla                 ;   the data to message storage
-set_data:   dec DATACOUNT       ; Which data byte is this?
-            ldx DATACOUNT       ; If a data byte follows a zero-byte status,
-            bmi msg_error       ; ,, ignore it
+            ldx DATACOUNT       ; Where are we in the data count?
+            bmi msg_err         ; If no status byte is set, nothing to do
+            beq msg_err         ; If the message is complete, nothing to do
+set_data:   dex                 ; Decrement data byte count; when at 0, message
+            stx DATACOUNT       ;   is considered complete.
             sta DATA2,x         ; Write the byte to message storage
-msg_error:  rts                 ; ,,
-new_status: jsr SETST           ; Set status byte
-set_count:  jsr MSGSIZE         ; Get message size
+msg_err:    rts                 ; ,,
+new_status: jsr _SETST          ; Set status byte
+set_count:  jsr _MSGSIZE        ; Get message size
             sta DATACOUNT       ; Number of bytes remaining for this message
             rts
             
@@ -351,7 +356,7 @@ set_count:  jsr MSGSIZE         ; Get message size
 ; Get data size of MIDI message, in data bytes (0, 1, or 2)
 ; Registers Affected - A, X     
 ; Return Values - Number of data bytes in A
-_MSGSIZE:   ldx #12             ; X is the index of the last status message
+_MSGSIZE:   ldx #13             ; X is the index of the last status message
 -loop:      cmp SizeTableS,x    ; Is this the status we're looking for?
             beq f_st            ; If so, look up the number of data bytes
             dex                 ; Iterate
@@ -372,9 +377,9 @@ f_st:       lda SizeTableD,x    ; Set number of data at index.
 _GETMSG:    clc                 ; Default to carry clear (no message)
             lda DATACOUNT       ; Is a complete message waiting?
             bne no_msg          ; If DATACOUNT != 0, message is incomplete
-            jsr GETST           ; Get status (without channel) for return
+            jsr _GETST          ; Get status (without channel) for return
             pha                 ; Store status during size calculation
-            jsr MSGSIZE         ; If this message has one data byte, that
+            jsr _MSGSIZE        ; If this message has one data byte, that
             ldx DATA2           ;   byte is in DATA2, so set X appropriately
             cmp #1              ; Otherwise, set X with DATA1 and Y with
             beq set_rst         ;   DATA2
@@ -392,5 +397,5 @@ no_msg:     rts
 ; Any status byte not listed here is treated as a one-data-byte command
 SizeTableS: .byte ST_NOTEON, ST_NOTEOFF, ST_POLYPR, ST_CONTROLC, ST_PITCHB
             .byte ST_MTC, ST_SONGPOS, ST_TUNEREQ, ST_ENDSYSEX, ST_CLOCK
-            .byte ST_START, ST_CONTINUE, ST_STOP
-SizeTableD: .byte 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0
+            .byte ST_START, ST_CONTINUE, ST_STOP, ST_SYSEX
+SizeTableD: .byte 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0
