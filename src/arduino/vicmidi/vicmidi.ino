@@ -1,4 +1,3 @@
-
 // Data lines (bits 0 - 7)
 // Start at bit 7 (pin 3), and end at bit 0 (pin 10)
 const int UPORT7 = 3;
@@ -6,11 +5,15 @@ const int UPORT7 = 3;
 // Control lines
 const int VCB1 = 11;
 const int VCB2 = 2;
+
+// Misc.
 int curr_dir;
+const int LEDPIN = 13;
 
 void setup() {
     Serial.begin(31250);
     //Serial.begin(9600); // Diagnostics
+    pinMode(LEDPIN, OUTPUT);
     setMIDIOut();
 }
 
@@ -42,7 +45,7 @@ void loop()
 
 void sendIntoPort(int c)
 {
-    setMIDIIn();
+    if (!curr_dir) setMIDIIn();
     int v = 128;
     digitalWrite(VCB2, HIGH);
     for (int b = 0; b < 8; b++)
@@ -56,6 +59,7 @@ void sendIntoPort(int c)
 
 void setMIDIIn()
 {
+    digitalWrite(LEDPIN, HIGH);
     for (int b = 0; b < 8; b++) pinMode(UPORT7 + b, OUTPUT);
     pinMode(VCB2, OUTPUT); // Transitions from high to low when data sent
     digitalWrite(VCB2, HIGH);
@@ -64,6 +68,7 @@ void setMIDIIn()
 
 void setMIDIOut()
 {
+    digitalWrite(LEDPIN, LOW);
     for (int b = 0; b < 8; b++) pinMode(UPORT7 + b, INPUT);
     pinMode(VCB1, OUTPUT); // Set LOW to acknowledge data received
     pinMode(VCB2, INPUT); // Reads LOW when data received

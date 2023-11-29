@@ -10,5 +10,9 @@ xa -o ./vic/midi-monitor.bin ./src/midi-monitor.asm
 printf "\x00\x18" | cat - ./vic/midi-monitor.bin > ./vic/midi-monitor
 cp ./vic/midi-monitor /Volumes/VIC20/
 
+xa -o ./vic/piano.bin ./src/piano.asm
+printf "\x00\x16" | cat - ./vic/piano.bin > ./vic/piano
+cp ./vic/piano /Volumes/VIC20/
+
 diskutil unmount /Volumes/VIC20
 

@@ -376,7 +376,7 @@ f_st:       lda SizeTableD,x    ; Set number of data at index.
 ;   4) Y contains DATA2 (if used)
 _GETMSG:    clc                 ; Default to carry clear (no message)
             lda DATACOUNT       ; Is a complete message waiting?
-            bne no_msg          ; If DATACOUNT != 0, message is incomplete
+            bne no_msg          ; If DATACOUNT != 0 incomplete or unstarted
             jsr _GETST          ; Get status (without channel) for return
             pha                 ; Store status during size calculation
             jsr _MSGSIZE        ; If this message has one data byte, that
@@ -386,7 +386,7 @@ _GETMSG:    clc                 ; Default to carry clear (no message)
             ldx DATA1           ;   ,,
             ldy DATA2           ;   ,,
 set_rst:    pla                 ; Put status back in A            
-            dec DATACOUNT       ; Set message to unready ($ff)
+            dec DATACOUNT       ; Set message from 0 to "unstarted" ($ff)
             sec                 ; Set carry to indicate message is ready
 no_msg:     rts
 

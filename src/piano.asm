@@ -11,10 +11,9 @@ LASTKEY     = $fa               ; What key was played last?
 * = $1600
 Start:      jmp Main
 
-#include "midikernal.asm"
+#include "./src/midikernal.asm"
 
-Main:       jsr SETOUT          ; Set up port for MIDI out
-            lda #0              ; Channel 1
+Main:       lda #0              ; Channel 1
             jsr SETCH           ; ,,
 start:      lda KEYDOWN         ; Wait for a key press
             cmp #$40            ; ,,
@@ -24,9 +23,11 @@ start:      lda KEYDOWN         ; Wait for a key press
             bne keyboard        ;   channel 1 and channel 16 (MIDI/CV)
             lda #$0f            ;   ,,
             eor MIDIST          ;   ,,
-            sta $900f           ;   ,, Screen color indicator
             jsr SETCH           ;   ,,
-            jmp end             ;   ,, 
+            lda $900f           ; Toggle color to indicate channel
+            eor #$55            ;   change
+            sta $900f           ;   ,,
+            jmp end 
 keyboard:   ldy #7              ; Search the keyboard table for a valid
 search:     lda KeyTable,y      ;   note
             cmp LASTKEY         ; Is this table entry the key pressed?
