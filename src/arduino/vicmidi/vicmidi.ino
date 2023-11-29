@@ -21,18 +21,15 @@ void setup() {
 
 void loop() 
 {    
-    int read_this_cycle = 0;
-
     // MIDI In
     if (Serial.available()) {
         int c = Serial.read();
         last_in = millis();
-        read_this_cycle = 1;
         sendIntoPort(c);
     }
 
     // MIDI Out
-    if (curr_dir && !read_this_cycle) setMIDIOut();
+    if (curr_dir && (millis() - last_in > 100)) setMIDIOut();
     if (!curr_dir && !digitalRead(VCB2)) {
         int out = 0;
         int val = 256;
@@ -61,6 +58,7 @@ void sendIntoPort(int c)
     }
     // Transition on CB2 pin to set interrupt flag
     digitalWrite(VCB2, LOW);
+    last_in = millis();
 }
 
 void setMIDIIn()
