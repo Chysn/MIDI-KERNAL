@@ -7,27 +7,33 @@ const int VCB1 = 11;
 const int VCB2 = 2;
 
 // Misc.
-int curr_dir;
+int curr_dir;            // Current data direction (1=IN 0=OUT)
 const int LEDPIN = 13;
+int last_in;             // millis() of most recent serial read
 
 void setup() {
     Serial.begin(31250);
     //Serial.begin(9600); // Diagnostics
     pinMode(LEDPIN, OUTPUT);
     setMIDIOut();
+    last_in = 0;
 }
 
 void loop() 
 {    
+    int read_this_cycle = 0;
+
     // MIDI In
     if (Serial.available()) {
         int c = Serial.read();
+        last_in = millis();
+        read_this_cycle = 1;
         sendIntoPort(c);
     }
 
     // MIDI Out
-    if (curr_dir) setMIDIOut();
-    if (!digitalRead(VCB2)) {
+    if (curr_dir && !read_this_cycle) setMIDIOut();
+    if (!curr_dir && !digitalRead(VCB2)) {
         int out = 0;
         int val = 256;
         for (int i = 0; i < 8; i++)
@@ -73,4 +79,5 @@ void setMIDIOut()
     pinMode(VCB1, OUTPUT); // Set LOW to acknowledge data received
     pinMode(VCB2, INPUT); // Reads LOW when data received
     curr_dir = 0;
+    last_in = 0; // Reset last IN
 }
