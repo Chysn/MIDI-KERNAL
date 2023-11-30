@@ -8,7 +8,6 @@ const int UPORT7 = 3;
 // Control lines
 const int VCB1 = 11;
 const int VCB2 = 2;
-const int LED = 13;
 
 // Misc.
 int curr_dir;            // Current data direction (1=IN 0=OUT)
@@ -18,7 +17,6 @@ void setup()
 {
     Serial.begin(31250);
     //Serial.begin(9600); // Diagnostics
-    pinMode(LED, OUTPUT);
     setMIDIOut();
     last_in = 0;
 }
@@ -27,13 +25,22 @@ void loop()
 {    
     // MIDI In
     if (Serial.available()) {
-        int c = Serial.read();
-        sendIntoPort(c);
         last_in = millis();
+        int c = Serial.read();
+        if (!curr_dir) setMIDIIn();
+        int v = 128;
+        for (int b = 0; b < 8; b++)
+        {
+            digitalWrite(UPORT7 + b, (c & v) ? HIGH : LOW);
+            v /= 2;
+        }
+        // Transition on CB2 pin to set interrupt flag
+        digitalWrite(VCB2, HIGH);
+        digitalWrite(VCB2, LOW);
     }
 
     // MIDI Out
-    if (curr_dir && millis() - last_in > 1000) setMIDIOut();
+    if (curr_dir && (millis() - last_in > 1000)) setMIDIOut();
     if (!curr_dir && digitalRead(VCB2) == LOW) {
         int out = 0;
         int val = 256;
@@ -50,23 +57,9 @@ void loop()
     }
 }
 
-void sendIntoPort(int c)
-{
-    if (!curr_dir) setMIDIIn();
-    int v = 128;
-    digitalWrite(VCB2, HIGH);
-    for (int b = 0; b < 8; b++)
-    {
-        digitalWrite(UPORT7 + b, (c & v) ? HIGH : LOW);
-        v /= 2;
-    }
-    // Transition on CB2 pin to set interrupt flag
-    digitalWrite(VCB2, LOW);
-}
-
 void setMIDIIn()
 {
-    digitalWrite(LED, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
     for (int b = 0; b < 8; b++) pinMode(UPORT7 + b, OUTPUT);
     pinMode(VCB2, OUTPUT); // Transitions from high to low when data sent
     digitalWrite(VCB2, HIGH);
@@ -75,7 +68,7 @@ void setMIDIIn()
 
 void setMIDIOut()
 {
-    digitalWrite(LED, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
     for (int b = 0; b < 8; b++) pinMode(UPORT7 + b, INPUT);
     pinMode(VCB1, OUTPUT); // Set LOW to acknowledge data received
     pinMode(VCB2, INPUT); // Reads LOW when data received
