@@ -33,7 +33,12 @@ void loop()
     }
 
     // MIDI Out
-    if (curr_dir && (digitalRead(VCB2_VICSIDE) == HIGH || millis() - last_in > 500)) setMIDIOut();
+    if (curr_dir) {
+        pinMode(VCB2, INPUT);
+        if (digitalRead(VCB2) == HIGH) setMIDIOut();
+        else pinMode(VCB2, OUTPUT);
+    }
+    //if (curr_dir && (digitalRead(VCB2_VICSIDE) == HIGH || millis() - last_in > 500)) setMIDIOut();
     if (!curr_dir && digitalRead(VCB2) == LOW) {
         int out = 0;
         int val = 256;

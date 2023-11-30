@@ -169,14 +169,12 @@ GETMSG:     jmp _GETMSG         ; Get complete MIDI message                 0036
 ; Preparations - None
 ; Registers Affected - None
 _SETOUT:    pha                 ; Save A for command, etc.
-            lda #%11100000      ; Set PCR to hold CB2 high for a few cycles
-            sta PCR             ; ,,
             lda #%11111111      ; Set DDR for output on all lines
             sta DDR             ; ,,
-            lda #%00001000      ; Disable CB2 interrupt
-            sta IER             ; ,,
             lda #%10000000      ; Set PCR for output handshaking mode
             sta PCR             ; ,,
+            lda #%00001000      ; Disable CB2 interrupt
+            sta IER             ; ,,
             pla
             rts
 
