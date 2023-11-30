@@ -12,13 +12,13 @@ const int LED = 13;
 
 // Misc.
 int curr_dir;            // Current data direction (1=IN 0=OUT)
-int last_time;           // millis() time of most recent MIDI IN
+int last_in;             // millis() time of most recent MIDI IN
 
 void setup()
 {
     Serial.begin(31250);
     //Serial.begin(9600); // Diagnostics
-    pinMode(LED, INPUT);
+    pinMode(LED, OUTPUT);
     setMIDIOut();
     last_in = 0;
 }
@@ -33,18 +33,7 @@ void loop()
     }
 
     // MIDI Out
-    if (curr_dir) {
-        // If MIDI has been coming from RX, temporarily set the
-        // CB2 pin to read. CB2 will go high when the interrupt
-        // acknowledges the port read, and that's when we need to
-        // go back to MIDI OUT.
-        //
-        // As a failsafe, revert to MIDI OUT if it's been some amount
-        // of time since the last MIDI IN byte.
-        pinMode(VCB2, INPUT);
-        if (digitalRead(VCB2) == HIGH || millis() - last_in > 1000) setMIDIOut();
-        else pinMode(VCB2, OUTPUT);
-    }
+    if (curr_dir && millis() - last_in > 1000) setMIDIOut();
     if (!curr_dir && digitalRead(VCB2) == LOW) {
         int out = 0;
         int val = 256;
