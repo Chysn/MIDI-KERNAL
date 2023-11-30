@@ -52,6 +52,10 @@ end:        lda KEYDOWN         ; Keep playing the note until the key is
 ; NMI Interrupt Service Routine
 ; If the interrupt is from a byte from the User Port, add it to the MIDI message
 ; Otherwise, just go back to the normal NMI (to handle STOP/RESTORE, etc.)
+;
+; Even though this is a MIDI OUT application, the MIDI IN ISR must still be
+; implemented, or CB2 interrupts will not be handled properly and the application
+; will crash.
 ISR:        pha                 ; NMI does not automatically save registers like
             txa                 ;   IRQ does, so that needs to be done
             pha                 ;   ,,
@@ -60,7 +64,8 @@ ISR:        pha                 ; NMI does not automatically save registers like
             jsr CHKMIDI         ; Is this a MIDI-based interrupt?
             bne midi            ;   If so, handle MIDI input
             jmp $feb2           ; Back to normal NMI, after register saves
-midi:       jmp $ff56           ; Restore registers and return from interrupt
+midi:       inc $900f           ; Flash screen color when there's MIDI input
+            jmp $ff56           ; Restore registers and return from interrupt
             
 ; Key codes for A,S,D,F,G,H,J,K            
 KeyTable:   .byte 17,41,18,42,19,43,20,44
