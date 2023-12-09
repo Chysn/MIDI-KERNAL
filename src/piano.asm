@@ -65,6 +65,7 @@ ISR:        pha                 ; NMI does not automatically save registers like
             bne midi            ;   If so, handle MIDI input
             jmp $feb2           ; Back to normal NMI, after register saves
 midi:       inc $900f           ; Flash screen color when there's MIDI input
+            jsr MIDIIN          ; Check port to reset interrupt flags
             jmp $ff56           ; Restore registers and return from interrupt
             
 ; Key codes for A,S,D,F,G,H,J,K            

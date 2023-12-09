@@ -151,6 +151,7 @@ CHPRES:     jmp _CHPRES         ; Channel pressure                          0018
 PITCHB:     jmp _PITCHB         ; Pitch bend                                001b
 
 ; MIDI In
+MIDIINIT:                       ; Alias for SETIN
 SETIN:      jmp _SETIN          ; Set MIDI port to input mode               001e
 GETCH:      jmp _GETCH          ; Get MIDI channel for message              0021
 SETST:      jmp _SETST          ; Set MIDI status and channel               0024
@@ -178,7 +179,7 @@ _SETOUT:    pha                 ; Save A for command, etc.
             pla
             rts
 
-; SETIN
+; SETIN (alias MIDIINIT)
 ; Prepare port for MIDI input
 ; Preparations - None
 ; Registers Affected - A
@@ -291,9 +292,10 @@ MIDICMD:    ora MIDIST          ; Generic endpoint for a typical
 ; MIDIOUT
 ; Send byte to MIDI port, wait for acknowledgement
 ; Preparations - SETOUT, SETCH, A = MIDI byte
-; Registers Affected - A
+; Registers Affected - None
 ; Return Values - Carry flag (clear if acknowledged, set if timeout)
-_MIDIOUT:   jsr _SETOUT         ; Set output mode
+_MIDIOUT:   pha                 ; Preserve A
+            jsr _SETOUT         ; Set output mode
             sta UPORT           ; Write to port
             txa                 ; Preserve X during acknowledgement
             pha                 ;   timeout check
@@ -303,15 +305,20 @@ _MIDIOUT:   jsr _SETOUT         ; Set output mode
             beq timeout         ; ,,
             bit IFR             ; Check interrupt flag for acknowledgement
             beq wait            ;   of MIDI message by the interface
+            clc
+            .byte $34           ; Skip Byte (SKB)
+timeout:    sec
+;            ldx #0
+;-delay      bit $ffff
+;            bit $ffff
+;            bit $ffff
+;            dex
+;            bne delay
+out_r:      jsr _SETIN          ; Return to input mode
             pla                 ; Get X back
             tax                 ; ,,
-            clc                 ; Clear carry if send OK
-out_r:      jsr _SETIN          ; Return to input mode
+            pla                 ; Get A back
             rts
-timeout:    pla                 ; Get X back
-            tax                 ; ,,
-            sec                 ; Set carry if timeout
-            bcs out_r           ; Return to input mode
 
 ; PROGRAMC
 ; Send Program Change command
