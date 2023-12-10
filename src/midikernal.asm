@@ -66,7 +66,7 @@
 ;                            MIDI INPUT DOCUMENTATION
 ;
 ; Example
-;     jsr SETIN                 ; In setup routine where MIDI In is expected
+;     jsr MIDIINIT              ; In setup routine where MIDI In is expected
 ;
 ;     ; Main loop checks for complete MIDI message and acts on it
 ;     jsr GETMSG                ; Has a complete MIDI message been received?
@@ -308,12 +308,6 @@ _MIDIOUT:   pha                 ; Preserve A
             clc
             .byte $34           ; Skip Byte (SKB)
 timeout:    sec
-;            ldx #0
-;-delay      bit $ffff
-;            bit $ffff
-;            bit $ffff
-;            dex
-;            bne delay
 out_r:      jsr _SETIN          ; Return to input mode
             pla                 ; Get X back
             tax                 ; ,,
@@ -344,8 +338,10 @@ MIDICMD2:   ora MIDIST          ; Generic endpoint for a two-byte
 ; Make MIDI Message
 ; Accept bytes until the appropriate number of parameters have been added
 ; Preparations - SETIN, CHKMIDI 
-; Registers Affected - A, X        
+; Registers Affected - A, X       
+; Most recent MIDI IN byte is returned in A 
 _MAKEMSG:   jsr _MIDIIN         ; Get the next available MIDI byte
+            pha                 ; Store input byte for return
             bmi new_status      ; If it's a new status byte, prepare for data
             ldx DATACOUNT       ; Where are we in the data count?
             bmi msg_err         ; If no status byte is set, nothing to do
@@ -353,10 +349,12 @@ _MAKEMSG:   jsr _MIDIIN         ; Get the next available MIDI byte
 set_data:   dex                 ; Decrement data byte count; when at 0, message
             stx DATACOUNT       ;   is considered complete.
             sta DATA2,x         ; Write the byte to message storage
-msg_err:    rts                 ; ,,
+msg_err:    pla                 ; Return last byte in A
+            rts                 ; ,,
 new_status: jsr _SETST          ; Set status byte
 set_count:  jsr _MSGSIZE        ; Get message size
             sta DATACOUNT       ; Number of bytes remaining for this message
+            pla                 ; Return last byte in A
             rts
             
 ; MSGSIZE
